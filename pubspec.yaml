@@ -26,3 +26,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/Machine_Learning_Facial_Recognition_surveillance_soc.png

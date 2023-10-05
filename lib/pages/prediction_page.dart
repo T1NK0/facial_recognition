@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import '../models/prediction_model.dart';
 import '../services/http_client_service.dart';
-import '../widgets/image_dialog.dart'; // Import the camera plugin
+import '../widgets/image_dialog.dart';
 
 class PredictionPage extends StatefulWidget {
   @override
@@ -13,30 +13,22 @@ class PredictionPage extends StatefulWidget {
 
 class _PredictionPageState extends State<PredictionPage> {
   late CameraController _controller;
-
   late Future<void> _initializeControllerFuture;
 
   @override
   void initState() {
     super.initState();
-
     _initializeCamera();
   }
 
-  // Initialize the camera controller
-
   Future<void> _initializeCamera() async {
     final cameras = await availableCameras();
-
     final firstCamera = cameras.first;
-
     _controller = CameraController(
       firstCamera,
       ResolutionPreset.medium,
     );
-
     _initializeControllerFuture = _controller.initialize();
-
     setState(() {});
   }
 
@@ -49,31 +41,25 @@ class _PredictionPageState extends State<PredictionPage> {
       final cameras = await availableCameras();
       final newCamera =
           cameras.firstWhere((camera) => camera.lensDirection == newDirection);
-
-      await _controller.dispose(); // Dispose of the old controller
+      await _controller.dispose();
       _controller = CameraController(
         newCamera,
         ResolutionPreset.medium,
       );
-
       _initializeControllerFuture = _controller.initialize();
-
       setState(() {});
     }
   }
 
   void _handleUsePicture(File imageFile) async {
-    Navigator.pop(context); // Close the dialog
-
+    Navigator.pop(context);
     try {
       final imageBytes = await imageFile.readAsBytes();
       final base64string = base64Encode(imageBytes);
       final predictionModel = PredictionModel(base64string: base64string);
       final content = jsonEncode(predictionModel.toJson());
-
       final response =
           await HttpClientService().Predict(content, 'Prediction/upload');
-
       print(response.statusCode);
       // Handle the API response as needed
     } catch (e) {
@@ -83,13 +69,12 @@ class _PredictionPageState extends State<PredictionPage> {
   }
 
   void _handleRetakePicture() {
-    Navigator.pop(context); // Close the dialog
+    Navigator.pop(context);
   }
 
   @override
   void dispose() {
     _controller.dispose();
-
     super.dispose();
   }
 
@@ -112,46 +97,60 @@ class _PredictionPageState extends State<PredictionPage> {
             future: _initializeControllerFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
-                return CameraPreview(_controller);
+                return GestureDetector(
+                  onTap: () {
+                    // Handle onTap event for CameraPreview
+                  },
+                  child: Container(
+                    height: MediaQuery.of(context).size.height *
+                        1, // Set the desired height
+                    child: CameraPreview(_controller),
+                  ),
+                );
               } else {
                 return Center(child: CircularProgressIndicator());
               }
             },
           ),
           Positioned(
-            bottom: 16, // Adjust the distance from the bottom as needed
-            child: FloatingActionButton(
-              onPressed: () async {
-                try {
-                  await _initializeControllerFuture;
-                  final image = await _controller.takePicture();
-
-                  if (!mounted) return;
-
-                  final imageFile = File(image.path);
-
-                  // Show the captured image in an AlertDialog
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return ImageDialog(
-                        imageFile: imageFile,
-                        onUsePressed: () {
-                          _handleUsePicture(
-                              imageFile); // Pass the function to handle the image processing
+            bottom: 16,
+            child: ClipOval(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () async {
+                    try {
+                      await _initializeControllerFuture;
+                      final image = await _controller.takePicture();
+                      if (!mounted) return;
+                      final imageFile = File(image.path);
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return ImageDialog(
+                            imageFile: imageFile,
+                            onUsePressed: () {
+                              _handleUsePicture(imageFile);
+                            },
+                            onRetakePressed: _handleRetakePicture,
+                          );
                         },
-                        onRetakePressed:
-                            _handleRetakePicture, // Handle retaking the picture
                       );
-                    },
-                  );
-                } catch (e) {
-                  print(e);
-                }
-              },
-              child: const Icon(Icons.camera_alt),
+                    } catch (e) {
+                      print(e);
+                    }
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.3),
+                    ),
+                    child: Icon(Icons.camera_alt, color: Colors.black),
+                  ),
+                ),
+              ),
             ),
-          )
+          ),
         ],
       ),
     );

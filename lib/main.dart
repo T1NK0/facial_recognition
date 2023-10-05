@@ -1,20 +1,12 @@
 import 'package:flutter/material.dart';
-import 'pages/train_page.dart';
 import 'pages/prediction_page.dart';
 import 'dart:async';
 import 'package:camera/camera.dart';
 
-Future<void> main() async {
-// Ensure that plugin services are initialized so that `availableCameras()`
-// can be called before `runApp()`
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-// Obtain a list of the available cameras on the device.
   final cameras = await availableCameras();
-
-// Get a specific camera from the list of available cameras.
   final firstCamera = cameras.first;
-
   runApp(FacialRecognition(firstCamera: firstCamera));
 }
 
@@ -27,16 +19,20 @@ class FacialRecognition extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Facial Recognition',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: Color(
+            0xFF4CAF50), // Light green color as primary color for dark mode
+        colorScheme: ColorScheme.dark(
+            primary: Color(0xFF4CAF50)), // Dark theme color scheme
       ),
+      debugShowCheckedModeBanner: false,
+      themeMode:
+          ThemeMode.system, // Set ThemeMode.dark for dark mode by default
       home: MainPage(
         title: 'Flutter Demo Home Page',
         camera: firstCamera,
       ),
       routes: {
-        '/train': (context) => TrainPage(),
         '/prediction': (context) => PredictionPage(),
       },
     );
@@ -44,7 +40,8 @@ class FacialRecognition extends StatelessWidget {
 }
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key, required this.title, required this.camera});
+  const MainPage({Key? key, required this.title, required this.camera})
+      : super(key: key);
   final String title;
   final CameraDescription camera;
 
@@ -60,23 +57,38 @@ class _MainPageState extends State<MainPage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/train');
-              },
-              child: Text('Train'),
-            ),
-            ElevatedButton(
+      body: Container(
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+                'assets/Machine_Learning_Facial_Recognition_surveillance_soc.png'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Padding(
+            padding: EdgeInsets.only(
+                top: 250.0), // You can adjust the top padding as needed
+            child: ElevatedButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/prediction');
               },
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                    (Set<MaterialState> states) {
+                  if (states.contains(MaterialState.pressed))
+                    return Colors.white.withOpacity(
+                        0.5); // Semi-transparent white when pressed
+                  return Colors.white
+                      .withOpacity(0.3); // Semi-transparent white
+                }),
+                foregroundColor: MaterialStateProperty.all<Color>(
+                    Colors.white), // Black text color
+              ),
               child: Text('Predict'),
             ),
-          ],
+          ),
         ),
       ),
     );
